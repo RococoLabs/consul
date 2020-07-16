@@ -1,0 +1,37 @@
+xlsx_package.workbook.add_worksheet(name: "Summary") do |sheet|
+  if @process.debate_phase.enabled? && !@process.questions.empty?
+    sheet.add_row [t("legislation.summary.debate_phase"), t("legislation.summary.debates", count: @process.questions.count)]
+    @process.questions.each do |question|
+      sheet.add_row [question.title, t("legislation.summary.comments", count: question.comments.count)]
+      sheet.add_hyperlink location: legislation_process_question_url(question.process, question), ref: sheet.rows.last.cells.first
+      question.best_comments.each do |comment|
+        sheet.add_row [comment.body, t("legislation.summary.votes", count: comment.votes_score)]
+        sheet.add_hyperlink location: comment_url(comment), ref: sheet.rows.last.cells.first
+      end
+      sheet.add_row ["", ""]
+    end
+  end
+
+  if @process.proposals_phase.enabled? && @proposals.any?
+    sheet.add_row [t("legislation.summary.proposals_phase"), t("legislation.summary.proposals", count: @proposals.count)]
+    @proposals.sort_by_supports.each do |proposal|
+      sheet.add_row [proposal.title,
+                     t("legislation.summary.votes", count: proposal.votes_score)]
+      sheet.add_hyperlink location: legislation_process_proposal_url(proposal.legislation_process_id, proposal), ref: sheet.rows.last.cells.first
+    end
+    sheet.add_row ["", ""]
+  end
+
+  if @process.allegations_phase.enabled? && @comments.any?
+    sheet.add_row [t("legislation.summary.allegations_phase"),
+                   t("legislation.summary.top_comments", count: @comments.count)]
+    @comments.group_by(&:commentable).each do |annotation, comments|
+      sheet.add_row [annotation.quote, t("legislation.summary.comments", count: annotation.comments.count)]
+
+      comments.each do |comment|
+        sheet.add_row [comment.body, t("legislation.summary.votes", count: comment.votes_score)]
+        sheet.add_hyperlink location: comment_url(comment), ref: sheet.rows.last.cells.first
+      end
+    end
+  end
+end

@@ -501,14 +501,29 @@ describe "Users" do
     end
   end
 
-  scenario "Sign out" do
-    user = create(:user)
-    login_as(user)
+  describe "Sign out", :js do
+    before { login_as(create(:user)) }
 
-    visit "/"
-    click_link "Sign out"
+    scenario "Redirects to the last visited page" do
+      visit proposals_path
+      click_link "Sign out"
 
-    expect(page).to have_content "You have been signed out successfully."
+      expect(page).to have_content "You have been signed out successfully."
+      expect(page).to have_current_path proposals_path
+    end
+
+    scenario "Does not redirect to POST requests URLs" do
+      visit account_path
+      click_link "Verify my account"
+      click_button "Verify residence"
+
+      expect(page).to have_content(/errors prevented the verification of your residence/)
+
+      click_link "Sign out"
+
+      expect(page).to have_content "You must sign in or register to continue."
+      expect(page).to have_current_path new_user_session_path
+    end
   end
 
   scenario "Reset password" do
